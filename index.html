@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101a38">
+  <meta name="description" content="Tablero de bingo del 20.º aniversario del CINDEA Pejibaye. Funciona sin Internet.">
+  <title>Gran Bingo • CINDEA Pejibaye • 20.º Aniversario</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1230;
+      --surface: #171f45;
+      --surface2: #222c55;
+      --muted: #bac5e5;
+      --white: #fff;
+      --b: #377afc;
+      --i: #9558ef;
+      --n: #15ad83;
+      --g: #fa983e;
+      --o: #f34e90;
+      --gold: #ffe184;
+    }
+    * {box-sizing:border-box}
+    html {height:100%}
+    body {
+      margin:0; min-height:100%;
+      background:radial-gradient(circle at 84% 0%, #243765 0%, transparent 34%),
+                 radial-gradient(circle at 5% 96%, #192e5c 0%, transparent 32%), #0a112d;
+      color:var(--white);
+      font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+      -webkit-font-smoothing:antialiased;
+      overflow-x:hidden;
+    }
+    button {font:inherit; cursor:pointer; touch-action:manipulation}
+    button:focus-visible, input:focus-visible {outline:3px solid #ffe58d;outline-offset:3px}
+    .shell {padding:clamp(10px,1.25vw,20px);max-width:2000px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;gap:clamp(10px,1.1vw,18px)}
+    .top {display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+    .brand {display:flex;align-items:center;gap:14px}
+    .logo {width:58px;height:58px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:17px;
+      color:#102045;background:linear-gradient(135deg,#ffe995,#ffb83f);font-weight:1000;font-size:27px;
+      box-shadow:0 0 24px #ffe08333;letter-spacing:-2px}
+    .eyebrow {margin:0;color:#ffd86c;font-size:clamp(10px,1.1vw,16px);font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+    h1 {margin:0;font-size:clamp(21px,2.6vw,42px);line-height:1.05;letter-spacing:-.04em;font-weight:1000}
+    .meta {display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+    .meta .pill {font-size:12px;font-weight:900;color:#e6edff;border:1px solid #586590;padding:9px 12px;border-radius:100px;background:#263157}
+    .meta .offline {border-color:#438d78;background:#173d39;color:#b4ffcf}
+    .stage {display:grid;grid-template-columns:minmax(0,1fr) minmax(248px,24.5%);gap:clamp(10px,1.15vw,18px);flex:1;min-height:0}
+    .board-wrap {background:#111a3b;border:1px solid #3e4c78;border-radius:24px;padding:clamp(10px,1vw,16px);box-shadow:0 16px 50px #0004;min-width:0}
+    .board-heading {display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 1px 10px;flex-wrap:wrap}
+    .board-heading strong {font-size:clamp(14px,1.45vw,23px);letter-spacing:.035em}
+    .board-heading span {color:#b7c8eb;font-size:clamp(11px,.95vw,14px);font-weight:650}
+    .board {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(5px,.55vw,10px);height:calc(100% - 40px)}
+    .column {min-width:0;display:flex;flex-direction:column;gap:clamp(3px,.35vw,6px)}
+    .column-head {height:clamp(50px,5.0vw,76px);flex:none;border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+       color:#fff;background:var(--col);box-shadow:inset 0 -5px 0 #0002}
+    .column-head .letter {font-size:clamp(30px,3.1vw,52px);font-weight:1000;line-height:.9;letter-spacing:.05em;text-shadow:0 2px 3px #0003}
+    .column-head .range {font-size:clamp(9px,.82vw,13px);font-weight:900;opacity:.94;margin-top:6px}
+    .number-list {display:grid;grid-template-rows:repeat(15,minmax(0,1fr));gap:clamp(3px,.32vw,6px);min-height:0;flex:1}
+    .number {
+      display:grid;place-items:center;width:100%;min-height:30px;border:1px solid #44537d;
+      border-radius:clamp(7px,.66vw,11px);color:#e4eafa;background:#222d53;
+      font-size:clamp(17px,1.52vw,29px);line-height:1;font-weight:900;font-variant-numeric:tabular-nums;
+      transition:background-color .14s,transform .14s,box-shadow .14s,border-color .14s;user-select:none
+    }
+    .number:hover {filter:brightness(1.25);transform:translateY(-1px)}
+    .number.marked {background:var(--col);color:#fff;border-color:#fff7;box-shadow:inset 0 -3px 0 #0002,0 0 14px color-mix(in srgb,var(--col) 28%,transparent)}
+    .number.latest {background:#ffe278;color:#192044;border:3px solid #fff;box-shadow:0 0 0 3px var(--col),0 0 24px #ffdf6b8a;position:relative;z-index:1;animation:pop .38s ease-out}
+    .side {display:flex;flex-direction:column;gap:clamp(10px,.95vw,16px);min-width:0}
+    .last-card {background:linear-gradient(165deg,#26335e 0%,#111a3b 88%);border:1px solid #55628a;border-radius:24px;
+      min-height:0;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(12px,1.3vw,24px);overflow:hidden;position:relative}
+    .last-card:before {content:"";position:absolute;width:95%;aspect-ratio:1;border:1px solid #ffffff18;border-radius:50%;pointer-events:none}
+    .section-label {font-size:clamp(12px,1.1vw,18px);font-weight:1000;letter-spacing:.13em;color:#ffe187;text-align:center;z-index:1}
+    .ball {--ball:#60729f;width:min(100%,clamp(156px,17vw,290px));aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:clamp(14px,2vw,29px) auto;
+      background:radial-gradient(circle at 33% 24%,#ffffffcc 0%,transparent 14%),radial-gradient(circle at 30% 18%,color-mix(in srgb,var(--ball) 65%,white),var(--ball) 58%,color-mix(in srgb,var(--ball) 65%,black));
+      border:8px solid #ffffff70;box-shadow:inset -15px -20px 28px #0004,inset 9px 12px 23px #fff5,0 25px 36px #0006,0 0 55px color-mix(in srgb,var(--ball) 46%,transparent);
+      position:relative;z-index:1;text-shadow:0 3px 4px #0004}
+    .ball.new {animation:ball-pop .56s cubic-bezier(.22,1.75,.4,1)}
+    .ball .ball-letter {font-weight:900;font-size:clamp(19px,2.45vw,36px);letter-spacing:.1em;line-height:1}
+    .ball .ball-number {font-weight:1000;font-size:clamp(78px,8vw,147px);line-height:1;letter-spacing:-.08em;margin-left:-.06em;font-variant-numeric:tabular-nums}
+    .ball.empty .ball-number {font-size:clamp(55px,6vw,110px);letter-spacing:0;margin-left:0}
+    .last-explainer {position:relative;z-index:1;text-align:center;color:#e5ecff;font-weight:750;font-size:clamp(12px,1.12vw,17px);line-height:1.35}
+    .stats {background:#161f43;border:1px solid #435179;padding:clamp(12px,1.3vw,20px);border-radius:20px}
+    .count-line {display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+    .count-line b {font-weight:900;font-size:clamp(17px,1.45vw,23px)}
+    .count-line output {font-size:clamp(22px,2.6vw,38px);font-weight:1000;font-variant-numeric:tabular-nums;color:#ffe18a}
+    .progress {height:12px;border-radius:100px;background:#343f69;overflow:hidden;margin:8px 0 14px}
+    .progress div {height:100%;width:0;background:linear-gradient(90deg,#1ccf94,#ffdc62,#f4779a);border-radius:inherit;transition:width .2s}
+    .history-title {font-size:12px;letter-spacing:.13em;color:#b8c7e9;font-weight:900;margin-bottom:10px}
+    .history {display:flex;flex-wrap:wrap;gap:8px;min-height:45px;align-items:flex-start}
+    .history-ball {min-width:48px;height:42px;display:flex;align-items:center;justify-content:center;gap:1px;padding:0 9px;border-radius:12px;background:var(--col);font-size:clamp(14px,1.1vw,19px);font-weight:1000;box-shadow:inset 0 -3px 0 #0002}
+    .history-empty {font-size:13px;color:#bdc8e3;padding:9px 0}
+    .toolbar {display:flex;align-items:stretch;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#151d41;border:1px solid #405076;padding:12px;border-radius:20px}
+    .toolbar-left,.toolbar-right {display:flex;gap:9px;align-items:stretch;flex-wrap:wrap}
+    .action {border:1px solid #56658f;background:#28345d;color:#fff;border-radius:14px;padding:12px 16px;font-size:clamp(13px,1vw,18px);font-weight:900;line-height:1.1;min-height:50px;transition:filter .14s,transform .14s}
+    .action:hover:not(:disabled) {filter:brightness(1.17);transform:translateY(-1px)}
+    .action:active:not(:disabled) {transform:translateY(1px)}
+    .action:disabled {opacity:.43;cursor:not-allowed}
+    .action.primary {background:linear-gradient(105deg,#ffd56c,#ff9e34);color:#19213b;border-color:#ffdd7d;box-shadow:0 5px 19px #f5a5362e;font-size:clamp(16px,1.35vw,22px)}
+    .action.danger {background:#42304a;border-color:#805264}
+    .tip {font-size:clamp(11px,.85vw,14px);color:#c5ccea;margin:1px 4px 0;line-height:1.45}
+    .tip strong {color:#ffe08b}
+    .toast {position:fixed;bottom:23px;left:50%;transform:translateX(-50%) translateY(20px);background:#ffdf87;color:#1b274a;border-radius:14px;padding:12px 19px;font-weight:850;font-size:16px;box-shadow:0 15px 40px #0006;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:5;text-align:center;max-width:95vw}
+    .toast.visible {transform:translateX(-50%) translateY(0);opacity:1}
+    .sr-only {position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+    @keyframes pop {0%{transform:scale(.82)}75%{transform:scale(1.065)}100%{transform:scale(1)}}
+    @keyframes ball-pop {0%{transform:scale(.65) rotate(-14deg);opacity:.4}68%{transform:scale(1.1) rotate(4deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+    @media(min-width:1100px) and (min-height:740px) {
+      .stage {min-height:calc(100vh - 215px)}
+      .number {min-height:clamp(31px,3.0vh,53px)}
+    }
+    @media(max-width:940px) {
+      .stage {grid-template-columns:minmax(0,1fr)}
+      .side {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+      .board {height:auto}
+      .number {min-height:clamp(33px,5vw,56px);font-size:clamp(17px,2.5vw,29px)}
+      .column-head {height:70px}
+      .last-card {min-height:240px}
+      .ball {width:clamp(130px,22vw,200px);margin:8px auto}
+      .ball .ball-number {font-size:clamp(64px,10vw,100px)}
+    }
+    @media(max-width:550px) {
+      .shell {padding:8px;gap:9px}
+      .logo {width:46px;height:46px;font-size:22px}
+      h1 {font-size:23px}
+      .brand {gap:9px}
+      .meta {display:none}
+      .board-wrap {border-radius:16px;padding:7px}
+      .board {gap:3px}
+      .column {gap:3px}
+      .column-head {height:53px;border-radius:8px}
+      .column-head .letter {font-size:30px}
+      .column-head .range {font-size:9px}
+      .number-list {gap:3px}
+      .number {min-height:37px;font-size:18px;border-radius:6px}
+      .number.latest {border-width:2px}
+      .board-heading {padding:3px}
+      .side {grid-template-columns:1fr}
+      .last-card {min-height:230px}
+      .toolbar {padding:8px}
+      .toolbar-left,.toolbar-right {flex:1}
+      .action {padding:9px 11px;flex:1}
+      .action.primary {flex:2}
+    }
+    @media(prefers-reduced-motion:reduce) {*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+    @media print {body{background:#fff;color:#000}.toolbar,.tip,.meta {display:none}.board-wrap,.stats {box-shadow:none}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="top">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">20<span style="font-size:.48em;align-self:flex-start;margin-top:11px">º</span></div>
+        <div>
+          <p class="eyebrow">Gran bingo · 20.º aniversario</p>
+          <h1>CINDEA PEJIBAYE</h1>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="pill offline">● FUNCIONA SIN INTERNET</span>
+        <span class="pill">BINGO · 75 BOLAS</span>
+      </div>
+    </header>
+
+    <main class="stage">
+      <section class="board-wrap" aria-label="Tablero de números del bingo">
+        <div class="board-heading">
+          <strong>TABLERO DE NÚMEROS</strong>
+          <span>Los números de colores ya salieron</span>
+        </div>
+        <div id="board" class="board"></div>
+      </section>
+      <aside class="side">
+        <section class="last-card" aria-label="Último número anunciado">
+          <div class="section-label">ÚLTIMA BOLA</div>
+          <div class="ball empty" id="bigBall" aria-live="polite" aria-atomic="true">
+            <div class="ball-letter" id="ballLetter">BINGO</div>
+            <div class="ball-number" id="ballNumber">?</div>
+          </div>
+          <div class="last-explainer" id="lastExplainer">¡Comienza la emoción!</div>
+        </section>
+        <section class="stats">
+          <div class="count-line"><b>Números cantados</b><output id="counter">0 / 75</output></div>
+          <div class="progress" aria-label="Progreso de la partida"><div id="progress"></div></div>
+          <div class="history-title">ÚLTIMOS NÚMEROS</div>
+          <div class="history" id="history"><span class="history-empty">Todavía no ha salido ninguno.</span></div>
+        </section>
+      </aside>
+    </main>
+
+    <section class="toolbar" aria-label="Controles del bingo">
+      <div class="toolbar-left">
+        <button class="action primary" id="drawBtn" type="button">🎱 SORTEAR NÚMERO</button>
+        <button class="action" id="undoBtn" type="button">↶ Deshacer</button>
+        <button class="action danger" id="resetBtn" type="button">⟲ Nueva partida</button>
+      </div>
+      <div class="toolbar-right">
+        <button class="action" id="soundBtn" type="button" aria-pressed="true">♪ Sonido: sí</button>
+        <button class="action" id="fullscreenBtn" type="button">⛶ Pantalla completa</button>
+      </div>
+    </section>
+    <div class="tip">💡 <strong>Con bolillero físico:</strong> haga clic directamente en el número que salió. <strong>Con sorteo digital:</strong> presione «SORTEAR NÚMERO». La partida se guarda automáticamente en este navegador. Teclas: <strong>Espacio</strong> = sortear, <strong>Z</strong> = deshacer, <strong>F</strong> = pantalla completa.</div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    'use strict';
+    const STORAGE_KEY = 'bingo-cindea-pejibaye-20-aniversario-v1';
+    const LETTERS = ['B','I','N','G','O'];
+    const COLORS = ['#377afc','#9558ef','#15ad83','#fa983e','#f34e90'];
+    const board = document.getElementById('board');
+    const bigBall = document.getElementById('bigBall');
+    const ballLetter = document.getElementById('ballLetter');
+    const ballNumber = document.getElementById('ballNumber');
+    const lastExplainer = document.getElementById('lastExplainer');
+    const historyEl = document.getElementById('history');
+    const counter = document.getElementById('counter');
+    const progress = document.getElementById('progress');
+    const drawBtn = document.getElementById('drawBtn');
+    const undoBtn = document.getElementById('undoBtn');
+    const soundBtn = document.getElementById('soundBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const toastEl = document.getElementById('toast');
+    const cells = new Map();
+    let called = [];
+    let soundOn = true;
+    let toastTimer = null;
+    let audioContext = null;
+    let storageWorked = true;
+
+    function letterFor(num) { return LETTERS[Math.floor((num-1)/15)]; }
+    function colorFor(num) { return COLORS[Math.floor((num-1)/15)]; }
+    function labelFor(num) { return letterFor(num) + '–' + num; }
+
+    function safelyRead() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.called)) {
+          called = [...new Set(data.called.filter(x => Number.isInteger(x) && x >= 1 && x <= 75))];
+        }
+        if (typeof data.soundOn === 'boolean') soundOn = data.soundOn;
+      } catch (err) { storageWorked = false; }
+    }
+    function save() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({called,soundOn})); }
+      catch (err) { storageWorked = false; }
+    }
+    function notify(text) {
+      toastEl.textContent = text;
+      toastEl.classList.add('visible');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove('visible'), 2700);
+    }
+
+    function makeBoard() {
+      for (let c=0;c<5;c++) {
+        const col = document.createElement('div');
+        col.className = 'column';
+        col.style.setProperty('--col',COLORS[c]);
+        const head = document.createElement('div');
+        head.className = 'column-head';
+        head.innerHTML = '<span class="letter">'+LETTERS[c]+'</span><span class="range">'+(1+c*15)+'–'+((c+1)*15)+'</span>';
+        col.appendChild(head);
+        const list = document.createElement('div');
+        list.className = 'number-list';
+        for(let i=1;i<=15;i++) {
+          const num = c*15+i;
+          const btn = document.createElement('button');
+          btn.type = 'button'; btn.className = 'number'; btn.textContent = num;
+          btn.setAttribute('aria-label','Marcar '+labelFor(num));
+          btn.addEventListener('click',() => toggleManual(num));
+          list.appendChild(btn);
+          cells.set(num,btn);
+        }
+        col.appendChild(list);
+        board.appendChild(col);
+      }
+    }
+
+    function update(animated = false) {
+      const set = new Set(called);
+      const last = called.length ? called[called.length - 1] : null;
+      for (const [num,cell] of cells) {
+        cell.classList.toggle('marked',set.has(num));
+        cell.classList.toggle('latest',num === last);
+        cell.setAttribute('aria-pressed',set.has(num) ? 'true' : 'false');
+        cell.setAttribute('aria-label',(set.has(num) ? 'Ya salió ' : 'Marcar ') + labelFor(num));
+      }
+      bigBall.classList.remove('new');
+      if (last !== null) {
+        ballLetter.textContent = letterFor(last);
+        ballNumber.textContent = last;
+        bigBall.style.setProperty('--ball',colorFor(last));
+        bigBall.classList.remove('empty');
+        lastExplainer.textContent = '¡Salió el '+labelFor(last)+'!';
+        if (animated) { void bigBall.offsetWidth; bigBall.classList.add('new'); }
+      } else {
+        ballLetter.textContent = 'BINGO';
+        ballNumber.textContent = '?';
+        bigBall.style.setProperty('--ball','#60729f');
+        bigBall.classList.add('empty');
+        lastExplainer.textContent = '¡Comienza la emoción!';
+      }
+      counter.textContent = called.length+' / 75';
+      progress.style.width = (called.length/75*100)+'%';
+      historyEl.replaceChildren();
+      if (!called.length) {
+        const span = document.createElement('span');
+        span.className='history-empty';span.textContent='Todavía no ha salido ninguno.';
+        historyEl.appendChild(span);
+      } else {
+        for(const num of called.slice(-8).reverse()) {
+          const span = document.createElement('span');
+          span.className='history-ball';span.style.setProperty('--col',colorFor(num));
+          span.textContent=labelFor(num);
+          historyEl.appendChild(span);
+        }
+      }
+      drawBtn.disabled = called.length === 75;
+      drawBtn.textContent = called.length === 75 ? '✓ SALIERON LAS 75 BOLAS' : '🎱 SORTEAR NÚMERO';
+      undoBtn.disabled = called.length === 0;
+      soundBtn.textContent = soundOn ? '♪ Sonido: sí' : '♪ Sonido: no';
+      soundBtn.setAttribute('aria-pressed',String(soundOn));
+      if (called.length === 75) lastExplainer.textContent = '¡Salieron las 75 bolas!';
+      save();
+    }
+
+    function chime() {
+      if(!soundOn) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        if (!audioContext) audioContext = new AudioCtx();
+        if (audioContext.state === 'suspended') audioContext.resume();
+        const t = audioContext.currentTime;
+        [660,880].forEach((hz,i) => {
+          const oscillator=audioContext.createOscillator();
+          const gain=audioContext.createGain();
+          oscillator.type='sine';oscillator.frequency.value=hz;
+          gain.gain.setValueAtTime(.0001,t+i*.15);
+          gain.gain.exponentialRampToValueAtTime(.13,t+i*.15+.025);
+          gain.gain.exponentialRampToValueAtTime(.0001,t+i*.15+.27);
+          oscillator.connect(gain);gain.connect(audioContext.destination);
+          oscillator.start(t+i*.15);oscillator.stop(t+i*.15+.29);
+        });
+      } catch(err) { /* Sigue funcionando aunque el equipo no tenga audio. */ }
+    }
+
+    function mark(num) {
+      if(called.includes(num)) return;
+      called.push(num);
+      update(true);
+      chime();
+    }
+    function toggleManual(num) {
+      if (called.includes(num)) {
+        if (!window.confirm('El número '+labelFor(num)+' ya está marcado. ¿Desea quitarlo del tablero?')) return;
+        called = called.filter(x=>x!==num);
+        update();
+        notify('Se quitó '+labelFor(num)+' del tablero.');
+      } else mark(num);
+    }
+    function randomIndex(limit) {
+      // Evita repetir bolas y utiliza aleatoriedad criptográfica cuando está disponible.
+      if(window.crypto && typeof window.crypto.getRandomValues === 'function') {
+        const max=0x100000000;
+        const threshold = max - (max % limit);
+        const uint = new Uint32Array(1);
+        do { window.crypto.getRandomValues(uint); } while(uint[0]>=threshold);
+        return uint[0] % limit;
+      }
+      return Math.floor(Math.random()*limit);
+    }
+    function draw() {
+      if(called.length===75) {notify('Ya salieron todos los números.');return;}
+      const set=new Set(called); const remaining=[];
+      for(let n=1;n<=75;n++) if(!set.has(n)) remaining.push(n);
+      mark(remaining[randomIndex(remaining.length)]);
+    }
+    function undo() {
+      if(!called.length) return;
+      const undone=called.pop();
+      update();
+      notify('Se deshizo '+labelFor(undone)+'.');
+    }
+    function reset() {
+      if (!called.length) return;
+      if(!window.confirm('¿Iniciar una nueva partida? Se borrarán los '+called.length+' números marcados.')) return;
+      called=[];update();notify('Nueva partida preparada. ¡Muchos éxitos!');
+    }
+    async function toggleFullscreen() {
+      try {
+        if(document.fullscreenElement) {await document.exitFullscreen();return;}
+        if(document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+        else notify('Puede usar F11 para ocupar toda la pantalla.');
+      } catch(err) { notify('Pruebe con F11 para ocupar toda la pantalla.'); }
+    }
+    drawBtn.addEventListener('click',draw);
+    undoBtn.addEventListener('click',undo);
+    document.getElementById('resetBtn').addEventListener('click',reset);
+    soundBtn.addEventListener('click',()=>{soundOn=!soundOn;update();notify(soundOn?'Sonido activado':'Sonido desactivado');});
+    fullscreenBtn.addEventListener('click',toggleFullscreen);
+    document.addEventListener('fullscreenchange',()=>{fullscreenBtn.textContent=document.fullscreenElement?'⛶ Salir de pantalla completa':'⛶ Pantalla completa';});
+    document.addEventListener('keydown',event=>{
+      if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
+      if (event.target && ['INPUT','TEXTAREA','SELECT'].includes(event.target.tagName)) return;
+      const key=event.key.toLowerCase();
+      if (event.code==='Space' && event.target===document.body) {event.preventDefault();draw();}
+      else if (key==='z' && event.target===document.body) undo();
+      else if (key==='f' && event.target===document.body) toggleFullscreen();
+    });
+    makeBoard();safelyRead();update();
+    if (!storageWorked) { notify('Este navegador no permite guardar la partida. Mantenga la página abierta.'); }
+  </script>
+</body>
+</html>
